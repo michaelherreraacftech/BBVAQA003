@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados de Pruebas - Sistema Q-Flow</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body{font-family:'Aptos','Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.4;margin:0;padding:10px;background-color:#f5f5f5;font-size:12px}
+        .container{max-width:1400px;margin:0 auto;background:white;padding:15px;border-radius:8px;box-shadow:0 0 15px rgba(0,0,0,0.1)}
+        .document-info{background:#f8f9fa;padding:15px;border-radius:6px;margin-bottom:20px;border-left:4px solid #1a237e}
+        .document-info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;font-size:12px;color:#666}
+        h1{color:#2c3e50;text-align:center;border-bottom:3px solid #3498db;padding-bottom:10px;margin-bottom:20px;font-size:24px}
+        .subtitle{text-align:center;color:#7f8c8d;font-style:italic;margin-bottom:25px;font-size:14px}
+        h2{color:#34495e;margin-top:20px;margin-bottom:10px;border-left:3px solid #3498db;padding-left:12px;font-size:16px}
+        h3{color:#34495e;margin-top:15px;margin-bottom:8px;font-size:14px}
+        .test-summary{background:linear-gradient(135deg,#2c3e50 0%,#34495e 100%);color:white;padding:12px;border-radius:6px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center}
+        .test-summary-content{flex:1}
+        .test-summary h3{margin-top:0;margin-bottom:5px;font-size:16px;color:#ecf0f1}
+        .test-summary p{margin:0;font-size:12px}
+        .result-badge{background:#e74c3c;color:white;padding:15px 20px;border-radius:6px;font-weight:bold;font-size:18px;text-align:center;min-width:80px;height:50px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+        .results-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:10px}
+        .results-table th,.results-table td{border:1px solid #ddd;padding:6px 4px;text-align:center}
+        .results-table th{background:linear-gradient(135deg,#3498db,#2980b9);color:white;font-weight:bold}
+        .results-table tr:nth-child(even){background-color:#f9f9f9}
+        .fail{background-color:#e74c3c;color:white;padding:5px 10px;border-radius:15px;font-weight:bold}
+        .chart-container-three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
+        .chart-box{background:white;padding:10px;border-radius:6px;box-shadow:0 1px 5px rgba(0,0,0,0.1);height:200px}
+        .chart-box canvas{max-height:150px!important;max-width:100%!important}
+        .chart-title{text-align:center;color:#2c3e50;margin-bottom:8px;font-weight:bold;font-size:11px}
+        .metrics-grid{display:grid;grid-template-columns:repeat(4,1fr) 150px;gap:10px;margin:15px 0;align-items:center}
+        .metric-card{background:linear-gradient(135deg,#ffccd5 0%,#ffb3ba 100%);color:#c0392b;padding:10px;border-radius:6px;text-align:center}
+        .metric-value{font-size:1.4em;font-weight:bold;margin-bottom:3px}
+        .metric-label{font-size:0.8em;opacity:0.9}
+        .pie-chart-container{display:flex;flex-direction:column;align-items:center;background:white;padding:10px;border-radius:6px;box-shadow:0 1px 5px rgba(0,0,0,0.1)}
+        .pie-chart-title{font-size:10px;font-weight:bold;color:#2c3e50;margin-bottom:5px}
+        .pie-chart-container canvas{max-height:100px!important;max-width:100px!important}
+        .architecture-info{background:#ecf0f1;padding:12px;border-radius:6px;margin:15px 0;font-size:11px}
+        .critical-warning{background:#ffebee;border:2px solid #e74c3c;padding:12px;border-radius:6px;margin:15px 0;font-size:11px}
+        .server-info{display:flex;justify-content:space-between;gap:15px;margin:10px 0}
+        .server-box{flex:1;background:white;padding:10px;border-radius:6px;border-left:3px solid #3498db}
+        .server-box h4{margin-top:0;margin-bottom:8px;font-size:12px}
+        .server-box ul{margin:0;padding-left:15px}
+        .server-box li{font-size:10px;margin-bottom:2px}
+        .legend{display:flex;justify-content:center;gap:15px;margin:10px 0;flex-wrap:wrap}
+        .legend-item{display:flex;align-items:center;gap:5px;font-size:10px}
+        .legend-color{width:15px;height:15px;border-radius:2px}
+        
+        /* Botón de navegación */
+        .nav-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:10px 0;border-bottom:1px solid #e0e0e0}
+        .back-btn{background:linear-gradient(135deg,#3498db,#2980b9);color:white;padding:8px 16px;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;display:flex;align-items:center;gap:8px;text-decoration:none;transition:all 0.3s ease}
+        .back-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(52,152,219,0.3);text-decoration:none;color:white}
+        .back-btn:active{transform:translateY(0)}
+        .page-title{color:#2c3e50;font-size:14px;font-weight:bold;margin:0}
+
+        /* Header SIMPLE y COMPACTO para PDF */
+        .pdf-header-full {
+            display: none;
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 0;
+            border-bottom: 3px solid #1a237e;
+            background: white;
+        }
+        
+        .pdf-header-full img {
+            width: 90%;
+            max-width: 1000px;
+            height: auto;
+            min-height: 120px;
+            max-height: 150px;
+            object-fit: contain;
+            background: white;
+            margin: 10px auto 15px auto;
+            display: block;
+        }
+
+        /* Estilos para impresión/PDF */
+        @media print {
+            .nav-header{display:none!important}
+            body{background:white!important;font-size:10px!important;margin:0!important;padding:20px!important}
+            .container{box-shadow:none!important;max-width:100%!important;padding:0!important;margin:0!important;background:white!important}
+            .chart-box{height:180px!important;page-break-inside:avoid!important}
+            .chart-box canvas{max-height:130px!important}
+            .results-table{page-break-inside:avoid!important}
+            .architecture-info{page-break-inside:avoid!important}
+            .metrics-grid{page-break-inside:avoid!important}
+            h1,h2{page-break-after:avoid!important}
+            h3{page-break-after:avoid!important;page-break-inside:avoid!important}
+            .chart-container-three{page-break-inside:avoid!important}
+            .analysis-section{page-break-inside:avoid!important}
+            .hardware-section{page-break-inside:avoid!important}
+            .cpu-memory-section{page-break-inside:avoid!important}
+            .disk-section{page-break-inside:avoid!important}
+            .cpu-memory-section h3{page-break-after:avoid!important}
+            .disk-section h3{page-break-after:avoid!important}
+            .pdf-header-full{display:block!important}
+            .document-info{background:#f8f9fa!important}
+            body { 
+                -webkit-print-color-adjust: exact !important; 
+                color-adjust: exact !important;
+            }
+            .result-badge {
+                background: #e74c3c !important;
+                color: white !important;
+            }
+            .fail {
+                background-color: #e74c3c !important;
+                color: white !important;
+            }
+            @page {
+                margin: 0.4in;
+            }
+            header, nav, .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header completo ACF Technologies ARRIBA DE TODO -->
+        <div class="pdf-header-full">
+            <img src="https://github.com/michaelherreraacftech/TESTBBVA002/raw/main/assets/images/header-acfv2.png" 
+                 alt="ACF Technologies - Product Quality Assurance">
+        </div>
+
+        <!-- Header de navegación (solo web) -->
+        <div class="nav-header">
+            <button class="back-btn" onclick="goBack()">
+                <span>←</span>
+                <span>Regresar</span>
+            </button>
+            <div class="page-title">Reporte de Performance - 36 Usuarios Concurrentes (FAIL)</div>
+            <button class="back-btn" onclick="downloadPDF()" style="background:linear-gradient(135deg,#e74c3c,#c0392b)">
+                <span>📄</span>
+                <span>Descargar PDF</span>
+            </button>
+        </div>
+
+        <div class="document-info">
+            <div class="document-info-grid">
+                <div><strong>Fecha de Elaboración:</strong> 3 de Junio, 2025</div>
+                <div><strong>Entorno:</strong> QA-DESA</div>
+                <div><strong>Cliente:</strong> BBVA Mex</div>
+                <div><strong>Modalidad:</strong> Script CaseGetFolio(7) Activo</div>
+                <div><strong>Analista Responsable:</strong> Michael J Herrera B</div>
+                <div><strong>Cargo:</strong> Líder de Aseguramiento de Calidad</div>
+            </div>
+        </div>
+
+        <h1>Análisis de Capacidad Sistema Q-Flow - Entorno QA-DESA</h1>
+        <p class="subtitle">Evaluación Completa de Rendimiento: 36 Usuarios Concurrentes<br><strong>Script CaseGetFolio(7) Activo</strong></p>
+
+        <div class="test-summary">
+            <div class="test-summary-content">
+                <h3>Prueba BBVAReceptionConsole009 - Performance (36 Usuarios Concurrentes)</h3>
+                <p><strong>Duración:</strong> 5 minutos | <strong>Arquitectura:</strong> Q-Flow + IIS + SQL Server</p>
+            </div>
+            <div class="result-badge">FAIL</div>
+        </div>
+
+        <div class="critical-warning">
+            <h4 style="color:#c0392b;margin-top:0">⚠️ ALERTA CRÍTICA: PUNTO DE SATURACIÓN ALCANZADO</h4>
+            <p><strong>El sistema ha alcanzado su punto de saturación con 36 usuarios concurrentes. Tasa de error del 20.45% indica degradación crítica del servicio. Script CaseGetFolio(7) demuestra mayor complejidad que InfoPage.</strong></p>
+        </div>
+
+        <div class="architecture-info">
+            <h3>💻 Especificaciones de Infraestructura QA-DESA</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:15px 0">
+                <div style="background:white;padding:15px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1)">
+                    <h4 style="margin-top:0;color:#e74c3c;font-size:13px">SQL Server (BBVAMX-UATSQL1)</h4>
+                    <ul style="font-size:10px;margin:0;padding-left:15px">
+                        <li><strong>OS:</strong> Windows Server 2022 Datacenter</li>
+                        <li><strong>CPU:</strong> AMD EPYC 7763 64-Core (2 Core, 4 Logical)</li>
+                        <li><strong>RAM:</strong> 7.95 GB Total (2.07 GB Disponible)</li>
+                        <li><strong>Virtualización:</strong> Hyper-V Virtual Machine</li>
+                        <li><strong>Arquitectura:</strong> x64-based PC</li>
+                    </ul>
+                </div>
+                <div style="background:white;padding:15px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1)">
+                    <h4 style="margin-top:0;color:#27ae60;font-size:13px">IIS Server 1 (BBVAMX-UATIIS1)</h4>
+                    <ul style="font-size:10px;margin:0;padding-left:15px">
+                        <li><strong>OS:</strong> Windows Server 2022 Datacenter</li>
+                        <li><strong>CPU:</strong> AMD EPYC 7763 64-Core (2 Core, 4 Logical)</li>
+                        <li><strong>RAM:</strong> 7.95 GB Total (3.38 GB Disponible)</li>
+                        <li><strong>Virtualización:</strong> Hyper-V Virtual Machine</li>
+                        <li><strong>Rol:</strong> Web Services Q-Flow</li>
+                    </ul>
+                </div>
+                <div style="background:white;padding:15px;border-radius:6px;box-shadow:0 2px 4px rgba(0,0,0,0.1)">
+                    <h4 style="margin-top:0;color:#3498db;font-size:13px">IIS Server 2 (BBVAMX-UATIIS2)</h4>
+                    <ul style="font-size:10px;margin:0;padding-left:15px">
+                        <li><strong>OS:</strong> Windows Server 2022 Datacenter</li>
+                        <li><strong>CPU:</strong> AMD EPYC 7763 64-Core (2 Core, 4 Logical)</li>
+                        <li><strong>RAM:</strong> 7.95 GB Total (4.49 GB Disponible)</li>
+                        <li><strong>Virtualización:</strong> Hyper-V Virtual Machine</li>
+                        <li><strong>Rol:</strong> Web Services Q-Flow</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="background:#fff3cd;border:1px solid #ffeaa7;padding:10px;border-radius:6px;margin-top:15px">
+                <p style="margin:0;font-size:11px;color:#856404"><strong>Nota Importante:</strong> 
+                Todas las pruebas fueron ejecutadas con <strong>Script CaseGetFolio(7) Activo</strong>, y todos los demás Scripts desarrollados para el cliente inactivos. Eso en aras de evaluar la capacidad del sistema bajo la ejecución de cada Script por separado. Esto puede impactar los tiempos de respuesta y uso de recursos y nos ayudará a garantizar el funcionamiento individual de cada uno de los recursos.</p>
+            </div>
+        </div>
+
+        <div class="architecture-info">
+            <h3>Arquitectura del Sistema</h3>
+            <div class="server-info">
+                <div class="server-box">
+                    <h4>IIS Server 1</h4>
+                    <ul><li>Servicios Web Q-Flow</li><li>Web de Encolamiento</li><li>Balanceador de Carga</li></ul>
+                </div>
+                <div class="server-box">
+                    <h4>IIS Server 2</h4>
+                    <ul><li>Servicios Web Q-Flow</li><li>Web de Encolamiento</li><li>Balanceador de Carga</li></ul>
+                </div>
+                <div class="server-box">
+                    <h4>SQL Server</h4>
+                    <ul><li>Base de Datos Q-Flow</li><li>Almacenamiento de Transacciones</li><li>Gestión de Colas</li></ul>
+                </div>
+            </div>
+        </div>
+
+        <h2>Resultados Consolidados</h2>
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>Prueba</th><th>Concurrencia</th><th>Duración</th><th>Muestras</th><th>Errores</th><th>% Error</th><th>Tiempo Prom (ms)</th><th>Min (ms)</th><th>Max (ms)</th><th>Std. Dev.</th><th>Throughput (TPS)</th><th>Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>BBVAReceptionConsole009</strong></td><td>36 usuarios</td><td>5 min</td><td>10,800</td><td>2,214</td><td>20.45%</td><td>800ms</td><td>199</td><td>13929</td><td>---</td><td>25.7</td><td><span class="fail">FAIL</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Métricas Clave</h2>
+        <div class="metrics-grid">
+            <div class="metric-card"><div class="metric-value">25.7</div><div class="metric-label">Transacciones/seg</div></div>
+            <div class="metric-card"><div class="metric-value">20.45%</div><div class="metric-label">Tasa de Error</div></div>
+            <div class="metric-card"><div class="metric-value">800ms</div><div class="metric-label">Tiempo Promedio</div></div>
+            <div class="metric-card"><div class="metric-value">13929ms</div><div class="metric-label">Máximo</div></div>
+            <div class="pie-chart-container">
+                <div class="pie-chart-title">Resultado</div>
+                <canvas id="resultPieChart" width="100" height="100"></canvas>
+            </div>
+        </div>
+
+        <h2>Rendimiento de Hardware</h2>
+        <div class="hardware-section" style="page-break-inside: avoid;">
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color" style="background-color:#ff6b6b"></div><span>Memoria</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color:#f9ca24"></div><span>CPU</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color:#4ecdc4"></div><span>Disco C: (S.O.)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color:#9b59b6"></div><span>Disco N: (Web/IIS)</span></div>
+                <div class="legend-item"><div class="legend-color" style="background-color:#27ae60"></div><span>Disco G: (Q-Flow Data)</span></div>
+            </div>
+
+            <div class="cpu-memory-section" style="page-break-inside: avoid;">
+                <h3>Uso de CPU y Memoria</h3>
+                <div class="chart-container-three">
+                    <div class="chart-box"><div class="chart-title">IIS Server 1 - CPU y Memoria</div><canvas id="s1cpu"></canvas></div>
+                    <div class="chart-box"><div class="chart-title">IIS Server 2 - CPU y Memoria</div><canvas id="s2cpu"></canvas></div>
+                    <div class="chart-box"><div class="chart-title">SQL Server - CPU y Memoria</div><canvas id="sqlcpu"></canvas></div>
+                </div>
+            </div>
+
+            <div class="disk-section" style="page-break-inside: avoid;">
+                <h3>Uso de Discos (I/O)</h3>
+                <div class="chart-container-three">
+                    <div class="chart-box"><div class="chart-title">IIS Server 1 - Discos C: y N:</div><canvas id="s1disk"></canvas></div>
+                    <div class="chart-box"><div class="chart-title">IIS Server 2 - Discos C: y N:</div><canvas id="s2disk"></canvas></div>
+                    <div class="chart-box"><div class="chart-title">SQL Server - Discos C: y G:</div><canvas id="sqldisk"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <h2>Análisis de Rendimiento</h2>
+        <div class="architecture-info">
+            <h4>Observaciones Críticas:</h4>
+            <ul>
+                <li><strong>Saturación del Sistema:</strong> 20.45% de errores marca el límite crítico del sistema</li>
+                <li><strong>Throughput Incrementado:</strong> 25.7 TPS pero con degradación severa de calidad</li>
+                <li><strong>Latencia Crítica:</strong> Tiempo promedio de 800ms, incremento del 60% vs 24 usuarios</li>
+                <li><strong>Tiempo Máximo Extremo:</strong> 13.9 segundos indica timeouts y colas de espera</li>
+                <li><strong>SQL Server Saturado:</strong> CPU sostenido al 80-100%, memoria al 85%</li>
+                <li><strong>Script CaseGetFolio Limitante:</strong> Mayor complejidad que InfoPage bajo misma carga</li>
+                <li><strong>Punto de Quiebre Identificado:</strong> Entre 24 y 36 usuarios está el límite real</li>
+                <li><strong>Infraestructura QA-DESA:</strong> Hardware insuficiente para esta carga con CaseGetFolio</li>
+            </ul>
+        </div>
+
+        <div class="critical-warning">
+            <h4 style="color:#c0392b;margin-top:0">🚨 CONCLUSIÓN: LÍMITE CRÍTICO ALCANZADO</h4>
+            <p><strong>Esta prueba demuestra que 36 usuarios concurrentes es el punto de saturación crítica para Script CaseGetFolio(7) en QA-DESA. El límite operacional recomendado se establece en máximo 30 usuarios concurrentes para mantener calidad de servicio aceptable.</strong></p>
+        </div>
+    </div>
+
+<script>
+// Verificar que Chart.js esté disponible y crear gráficos
+function initializeCharts() {
+    console.log('Inicializando gráficos 36 usuarios...');
+    
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js no está disponible');
+        setTimeout(initializeCharts, 500);
+        return;
+    }
+
+    try {
+        const timeLabels = ['2:48:44', '2:52:15', '2:53:15', '2:54:15', '2:55:15', '2:56:08'];
+        
+        // Datos de performance counters - Sistema saturado
+        const server1Data = {
+            cpu: [12, 20, 55, 18, 15, 10],
+            memory: [10, 10, 10, 10, 10, 10],
+            diskC: [2, 5, 15, 6, 4, 2],
+            diskN: [5, 10, 25, 8, 6, 3]
+        };
+        
+        const server2Data = {
+            cpu: [10, 18, 50, 16, 13, 8],
+            memory: [10, 10, 10, 10, 10, 10],
+            diskC: [2, 4, 12, 5, 3, 2],
+            diskN: [4, 8, 20, 7, 5, 3]
+        };
+        
+        const sqlServerData = {
+            cpu: [80, 90, 100, 95, 85, 75],
+            memory: [70, 80, 85, 80, 75, 65],
+            diskC: [8, 12, 20, 15, 10, 6],
+            diskG: [25, 35, 50, 40, 30, 20]
+        };
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: { size: 9 },
+                        boxWidth: 10,
+                        padding: 8
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Uso (%)',
+                        font: { size: 10 }
+                    },
+                    ticks: {
+                        font: { size: 9 }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Tiempo',
+                        font: { size: 10 }
+                    },
+                    ticks: {
+                        font: { size: 9 }
+                    }
+                }
+            }
+        };
+
+        // Gráfico de torta para PASS/FAIL - Mayoría FAIL
+        new Chart(document.getElementById('resultPieChart'), {
+            type: 'pie',
+            data: {
+                labels: ['FAIL (20.45%)', 'PASS (79.55%)'],
+                datasets: [{
+                    data: [20.45, 79.55],
+                    backgroundColor: ['#e74c3c', '#2ecc71'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 8 },
+                            boxWidth: 8,
+                            padding: 4,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gráficos CPU y Memoria
+        new Chart(document.getElementById('s1cpu'), {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'CPU',
+                        data: server1Data.cpu,
+                        borderColor: '#f9ca24',
+                        backgroundColor: 'rgba(249, 202, 36, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Memoria',
+                        data: server1Data.memory,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+
+        new Chart(document.getElementById('s2cpu'), {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'CPU',
+                        data: server2Data.cpu,
+                        borderColor: '#f9ca24',
+                        backgroundColor: 'rgba(249, 202, 36, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Memoria',
+                        data: server2Data.memory,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+
+        new Chart(document.getElementById('sqlcpu'), {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'CPU',
+                        data: sqlServerData.cpu,
+                        borderColor: '#f9ca24',
+                        backgroundColor: 'rgba(249, 202, 36, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Memoria',
+                        data: sqlServerData.memory,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+
+        // Gráficos de Discos
+        new Chart(document.getElementById('s1disk'), {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'Disco C: (S.O.)',
+                        data: server1Data.diskC,
+                        borderColor: '#4ecdc4',
+                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Disco N: (Web/IIS)',
+                        data: server1Data.diskN,
+                        borderColor: '#9b59b6',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+
+        new Chart(document.getElementById('s2disk'), {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'Disco C: (S.O.)',
+                        data: server2Data.diskC,
+                        borderColor: '#4ecdc4',
+                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Disco N: (Web/IIS)',
+                        data: server2Data.diskN,
+                        borderColor: '#9b59b6',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+
+        new Chart(document.getElementById('sqldisk'), {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [
+                    {
+                        label: 'Disco C: (S.O.)',
+                        data: sqlServerData.diskC,
+                        borderColor: '#4ecdc4',
+                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Disco G: (Q-Flow Data)',
+                        data: sqlServerData.diskG,
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: chartOptions
+        });
+
+        console.log('🚨 Todos los gráficos de 36 usuarios CaseGetFolio(7) FAIL cargados!');
+        
+    } catch (error) {
+        console.error('Error creando gráficos:', error);
+    }
+}
+
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeCharts);
+} else {
+    initializeCharts();
+}
+
+// Función de navegación para SharePoint
+function goBack() {
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        // Regresa al index.html principal
+        window.location.href = '../index.html';
+    }
+}
+
+// También funciona con tecla Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        goBack();
+    }
+});
+
+// Función para descargar como PDF
+function downloadPDF() {
+    const originalTitle = document.title;
+    document.title = 'Reporte_BBVA_36_Usuarios_CaseGetFolio_FAIL_' + new Date().toISOString().split('T')[0];
+    
+    // Ocultar elementos que no queremos en el PDF
+    const elementsToHide = document.querySelectorAll('.nav-header, header, nav');
+    elementsToHide.forEach(el => el.style.display = 'none');
+    
+    // Configurar para impresión óptima
+    const originalStyles = {
+        fontSize: document.body.style.fontSize,
+        background: document.body.style.background,
+        margin: document.body.style.margin,
+        padding: document.body.style.padding
+    };
+    
+    // Optimizar estilos para PDF
+    document.body.style.fontSize = '9px';
+    document.body.style.background = 'white';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    
+    // Agregar configuración de página para ocultar URLs
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @media print {
+            @page { 
+                margin: 0.5in; 
+                size: A4;
+            }
+            .nav-header, header, nav { 
+                display: none !important; 
+            }
+            body { 
+                -webkit-print-color-adjust: exact; 
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Dar un momento para que se apliquen los estilos
+    setTimeout(() => {
+        window.print();
+        
+        // Restaurar estilos originales después de imprimir
+        setTimeout(() => {
+            document.title = originalTitle;
+            document.body.style.fontSize = originalStyles.fontSize;
+            document.body.style.background = originalStyles.background;
+            document.body.style.margin = originalStyles.margin;
+            document.body.style.padding = originalStyles.padding;
+            
+            // Mostrar elementos ocultos
+            elementsToHide.forEach(el => el.style.display = '');
+            
+            // Remover el estilo agregado
+            document.head.removeChild(style);
+        }, 1000);
+    }, 100);
+}
+</script>
+</body>
+</html>
